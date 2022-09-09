@@ -98,10 +98,10 @@ _check_args() {
 
 _check_args "$@"
 
-if [ $boolHelp == 1 ]; then
+if [[ $boolHelp == 1 ]]; then
   _help
   exit
-elif [ $boolDebug == 1 ]; then
+elif [[ $boolDebug == 1 ]]; then
   echo "-Temporary Debug Scripts-"
   echo -e "Variables Currently not in usage:\n"
   echo "$boolRoot"
