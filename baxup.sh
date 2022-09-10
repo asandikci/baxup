@@ -12,7 +12,7 @@ colorReset='\033[0m'
 msgHelp="Usage: baxup [OPTIONS]
 Backups files specified in backup-dir.txt
   [NI] => Not Implemented
-  -d, --debug                do not copy files, work with empty folder
+  -d, --debug                     do not copy files, work with empty folder
   -r, --root                      ignore the required sudo permisson ${colorRed}-Dangerous-${colorReset}
   -k, --keep                      keep unarchived folder
   -c, --create                    create a new compressed backup archive
