@@ -24,8 +24,8 @@ Backups files specified in backup-dir.txt
 
   --startup                       special commands for startup
                                   (checks frequency and automatically creates backup)
-  [NI] --dir-path=PATH            specify a path for backup-dir.txt
-  [NI] --target-path=PATH         specify a path where backups will be stored
+  [NI] --info-path=PATH            specify a path for backup-dir.txt
+  [NI] --create-path=PATH         specify a path where backups will be stored
 ${colorCyan}Copyright 2022 © Aliberk Sandıkçı${colorReset}\n"
 # msgExample='msg'
 
@@ -44,7 +44,7 @@ varFrequency=0
 varUser=$([ -n "$SUDO_USER" ] && echo "$SUDO_USER" || echo "$USER")
 
 pathDir="/home/${varUser}/backups/backup-dir.txt"
-pathHistory="/home/${varUser}/backups/backup-history"
+pathHistory="/home/${varUser}/backups/backup-history.txt"
 pathTarget="/home/${varUser}/backups/"
 pathSetup=""
 #-!SECTION VARIABLES
@@ -117,4 +117,11 @@ elif [[ $boolDebug == 1 ]]; then
   echo "$pathTarget"
 elif [[ $boolCreate == 1 && $boolSetup == 1 ]]; then
   printf '%b%s%b%s%b' "$colorRed" "Warning: " "$colorReset" "Do not use both create and setup commands" "\n"
+  exit
+elif [[ $boolRoot == 0 && $EUID -gt 0 ]]; then
+  printf '%b%s%b' "$colorRed" "Please run as ROOT!!!" "\n"
+  sleep 0.1
+  printf '%s%b%b' "Aborting..." "$colorReset" "\n"
+  sleep 1
+  exit
 fi
