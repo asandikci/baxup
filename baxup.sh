@@ -3,7 +3,7 @@
 # SECTION VARIABLES
 # More about cli coloring: LINK https://stackoverflow.com/a/28938235
 colorRed='\033[1;91m'
-# colorYellow='\033[1;93m'
+colorYellow='\033[1;93m'
 # colorGreen='\033[1;92m'
 colorCyan='\033[1;96m'
 # colorWhite='\033[1;97m\033[40m' # with dark background
@@ -22,9 +22,9 @@ Backups files specified in backup-dir.txt
   -f, --frequency=NUMBER          set a frequency for baxup (1 time each NUMBER day)             
   -h, --help                      display this help message
 
-  --startup                       special commands for startup
+  --startup=USERNAME              special commands for startup
                                   (checks frequency and automatically creates backup)
-  [NI] --info-path=PATH            specify a path for backup-dir.txt
+  [NI] --info-path=PATH           specify a path for backup-dir.txt
   [NI] --create-path=PATH         specify a path where backups will be stored
 ${colorCyan}Copyright 2022 © Aliberk Sandıkçı${colorReset}\n"
 # msgExample='msg'
@@ -48,6 +48,22 @@ pathHistory="/home/${varUser}/backups/backup-history.txt"
 pathTarget="/home/${varUser}/backups/"
 pathSetup=""
 #-!SECTION VARIABLES
+
+_log() {
+  if [[ $boolVerbose == 1 || $1 == "1" ]]; then
+
+    if [[ $2 == "0" ]]; then
+      printf '%b' "$colorReset$3 $colorReset\n"
+    elif [[ $2 == "1" ]]; then
+      printf '%b%s%b' "$colorCyan" "Info:" "$colorReset $3 $colorReset\n"
+    elif [[ $2 == "2" ]]; then
+      printf '%b%s%b' "$colorYellow" "Warning:" "$colorReset $3 $colorReset\n"
+    elif [[ $2 == "3" ]]; then
+      printf '%b%s%b' "$colorRed" "Error:" "$colorReset $3 $colorReset\n"
+    fi
+
+  fi
+}
 
 _help() {
   printf '%b' "${msgHelp}"
@@ -81,19 +97,30 @@ _check_args() {
         varFrequency=${tmpVar#*=}
       elif [[ $tmpVar == "--help" || $tmpVar == "-h" ]]; then
         boolHelp=1
-      elif [[ $tmpVar == "--startup" ]]; then
+      elif [[ $tmpVar == "--startup="* ]]; then
         boolStartup=1
+        varUser=${tmpVar#*=}
       else
         printf '%b%s%b%s%b' "$colorRed" "Error: " "$colorReset" "There is no command named $tmpVar or $tmpVar do not have enough argument" "\n"
         sleep 0.1
         printf '%b%s%b' "$colorRed" "Aborting..." "$colorReset\n"
         exit
       fi
-
     done
-
   fi
+}
 
+_check_user() {
+  _log "1" "0" "Is your 'home folder' name ${colorCyan}${varUser}${colorReset} ?"
+  read -rp "(Y/N) " input
+  if [[ $input == [yY] ]]; then
+    _log "0" "1" "Proceeding with default"
+  else
+    _log "0" "2" "Home folder name is different (reported by user)"
+    read -rp "Enter your home folder name (case sensitive): " input
+    varUser=$input
+    _log "1" "1" "Proceeding with user entered manually: ${colorCyan}$varUser"
+  fi
 }
 
 _check_args "$@"
@@ -124,4 +151,6 @@ elif [[ $boolRoot == 0 && $EUID -gt 0 ]]; then
   printf '%s%b%b' "Aborting..." "$colorReset" "\n"
   sleep 1
   exit
+elif [[ ($boolCreate == 1 || $boolSetup == 1) && $boolStartup == 0 ]]; then
+  _check_user
 fi
