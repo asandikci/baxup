@@ -4,7 +4,7 @@
 # More about cli coloring: LINK https://stackoverflow.com/a/28938235
 colorRed='\033[1;91m'
 colorYellow='\033[1;93m'
-# colorGreen='\033[1;92m'
+colorGreen='\033[1;92m'
 colorCyan='\033[1;96m'
 # colorWhite='\033[1;97m\033[40m' # with dark background
 colorReset='\033[0m'
@@ -12,20 +12,19 @@ colorReset='\033[0m'
 msgHelp="Usage: baxup [OPTIONS]
 Backups files specified in backup-dir.txt
   [NI] => Not Implemented
-  -d, --debug                     do not copy files, work with empty folder
+  [NI] -d, --debug                do not copy files, work with empty folder
   -r, --root                      ignore the required sudo permisson ${colorRed}-Dangerous-${colorReset}
   -k, --keep                      keep unarchived folder
   -c, --create                    create a new compressed backup archive
-  -s, --setup=PATH                extract target archive and move to root for merge
+  [NI] -s, --setup=PATH           extract target archive and move to root for merge
   -v, --verbose                   verbosely list files processed and logs
-  -l, --log                       output logs
-  -f, --frequency=NUMBER          set a frequency for baxup (1 time each NUMBER day)             
+  [NI] -l, --log                  output logs   
   -h, --help                      display this help message
 
-  --startup=USERNAME              special commands for startup
-                                  (checks frequency and automatically creates backup)
-  [NI] --info-path=PATH           specify a path for backup-dir.txt
-  [NI] --create-path=PATH         specify a path where backups will be stored
+  [NI] --show                     shows current configurations
+  [NI] --startup=USERNAME         special commands for startup
+                                  (checks frequenciese and automatically creates backup)
+  [NI] --set-path=PATH            set path for baxups
 ${colorCyan}Copyright 2022 © Aliberk Sandıkçı${colorReset}\n"
 # msgExample='msg'
 
@@ -43,32 +42,66 @@ boolStartup=0
 varFrequency=0
 varUser=$([ -n "$SUDO_USER" ] && echo "$SUDO_USER" || echo "$USER")
 
-pathDir="/home/${varUser}/backups/backup-dir.txt"
-pathHistory="/home/${varUser}/backups/backup-history.txt"
-pathTarget="/home/${varUser}/backups/"
+pathBaxups="/home/${varUser}/baxups/"
+pathHistory="/home/${varUser}/baxups/history.log"
+pathTargets="/home/${varUser}/baxups/targets.txt"
 pathSetup=""
+# TODO: Store (write/read/check) path variables in a config file (~/.config/baxup/variables.txt)
+
+dateCur=$(date '+%Y-%m-%d_%H-%M')
+
 #-!SECTION VARIABLES
 
-_log() {
-  if [[ $boolVerbose == 1 || $1 == "1" ]]; then
+# SECTION FUNCTIONS
 
-    if [[ $2 == "0" ]]; then
-      printf '%b' "$colorReset$3 $colorReset\n"
-    elif [[ $2 == "1" ]]; then
+# 0(only verbose)-1 | 0-1(Info)-2(Warning)-3(Error) | text
+_log() {
+  if [[ $boolVerbose == 1 || $1 == 1 ]]; then
+    if [[ $# -gt 3 && $3 == "_date_" ]]; then
+      printf "%s" "$(date '+%Y-%m-%d %H:%M | ')"
+      set -- "$1" "$2" "$4"
+    fi
+
+    if [[ $2 == 0 ]]; then
+      printf '%b' "$colorReset"
+      for ((i = 3; i <= "$#"; i++)); do
+        printf '%b' "${!i}"
+        sleep 0.1
+      done
+      printf '%b' "$colorReset\n"
+    elif [[ $2 == 1 ]]; then
       printf '%b%s%b' "$colorCyan" "Info:" "$colorReset $3 $colorReset\n"
-    elif [[ $2 == "2" ]]; then
+    elif [[ $2 == 2 ]]; then
       printf '%b%s%b' "$colorYellow" "Warning:" "$colorReset $3 $colorReset\n"
-    elif [[ $2 == "3" ]]; then
+    elif [[ $2 == 3 ]]; then
       printf '%b%s%b' "$colorRed" "Error:" "$colorReset $3 $colorReset\n"
     fi
 
   fi
+
+  # TODO: Write to local logs (.local or .cache)
+
 }
 
+# log to history.log
+_log_history() {
+  printf '%b' "$(date '+%Y-%m-%d %H:%M:%S') | $1\n" >>"$pathHistory"
+}
+
+# abort from script
+_abort() {
+  sleep 0.5
+  _log 1 0 "${colorRed}Aborting" "." "." "."
+  sleep 0.5
+  exit
+}
+
+# show help message
 _help() {
-  printf '%b' "${msgHelp}"
+  _log 1 0 "${msgHelp}"
 }
 
+# check arguments
 _check_args() {
   if [ $# == 0 ]; then
     boolHelp=1
@@ -92,37 +125,121 @@ _check_args() {
         boolVerbose=1
       elif [[ $tmpVar == "--log" || $tmpVar == "-l" ]]; then
         boolLog=1
-      elif [[ $tmpVar == "--frequency="* || $tmpVar == "-f="* ]]; then
-        boolFrequency=1
-        varFrequency=${tmpVar#*=}
       elif [[ $tmpVar == "--help" || $tmpVar == "-h" ]]; then
         boolHelp=1
       elif [[ $tmpVar == "--startup="* ]]; then
         boolStartup=1
         varUser=${tmpVar#*=}
       else
-        printf '%b%s%b%s%b' "$colorRed" "Error: " "$colorReset" "There is no command named $tmpVar or $tmpVar do not have enough argument" "\n"
-        sleep 0.1
-        printf '%b%s%b' "$colorRed" "Aborting..." "$colorReset\n"
-        exit
+        _log 1 2 "There is no command named $tmpVar or $tmpVar do not have enough argument"
+        _abort
       fi
     done
   fi
 }
 
+# check user home folder
 _check_user() {
   _log "1" "0" "Is your 'home folder' name ${colorCyan}${varUser}${colorReset} ?"
   read -rp "(Y/N) " input
   if [[ $input == [yY] ]]; then
-    _log "0" "1" "Proceeding with default"
+    _log "0" "1" "Proceeding with default home folder name: ${colorCyan}${varUser}"
   else
     _log "0" "2" "Home folder name is different (reported by user)"
     read -rp "Enter your home folder name (case sensitive): " input
     varUser=$input
-    _log "1" "1" "Proceeding with user entered manually: ${colorCyan}$varUser"
+    _log "1" "1" "Proceeding with user which entered manually: ${colorCyan}$varUser"
+    pathBaxups="/home/${varUser}/baxups/"
+    pathHistory="/home/${varUser}/baxups/history.log"
+    pathTargets="/home/${varUser}/baxups/targets.txt"
   fi
 }
 
+# check "baxups" folder if exist, if not create folder and related files
+_check_folder() {
+  [[ -d $pathBaxups ]] || {
+    _log 0 2 "There is no $pathBaxups folder"
+    _log 0 1 "Creating $pathBaxups folder"
+    mkdir "$pathBaxups"
+    _log_history "Created Automatically because of originial baxup folder couldn't found\n"
+    printf '%b' "# Write your targets below to backup\n#         Path                                                           Type                    Frequency\n# 1      /example-path/                                                   0                         1" >"$pathTargets"
+    sleep 1
+  }
+
+  [[ -f $pathHistory ]] || {
+    _log_history "Created Automatically because of originial baxup folder couldn't found\n\n\n"
+  }
+
+  [[ -f $pathTargets ]] || {
+    printf '%b' "# Write your targets below to backup\n#         Path                                                           Type                    Frequency\n# 1      /example-path/                                                   0                         1" >"$pathTargets"
+  }
+
+  chown -R "$varUser":"$varUser" "$pathBaxups"
+  chown "$varUser":"$varUser" "$pathHistory"
+  chown "$varUser":"$varUser" "$pathTargets"
+}
+
+_create() {
+  pathCur="$pathBaxups$dateCur"
+  processNum=0
+
+  mkdir "$pathCur"
+  _log_history "Creation Process Started"
+  _log_history "Created Folder $dateCur"
+  _log 0 1 "Created Folder $dateCur"
+  printf '%b'"Backup Created at $dateCur\nSee log for more info: $pathHistory\n" >"$pathBaxups/$dateCur/info.txt"
+  _log 0 1 "Created File info.txt in backup $dateCur"
+  _log_history "Created File info.txt in backup $dateCur"
+
+  _log 1 0 "Starting Process:" " ${colorCyan}Copying Files"
+  _log_history "Copied Files:"
+
+  while read -r inputNum inputPath inputType inputFrequency; do
+    if [[ -z $inputNum || $inputNum == "#" ]]; then
+      continue
+    fi
+    sleep 0.2
+    if [[ $inputType == "0" ]]; then
+      # TODO: make folder names from root (for easy setup)
+      # cp -r "$inputPath" "$pathCur"
+      # TODO: check if file exist
+      _log 1 1 "Copied $inputPath"
+      _log_history " - $inputPath (Frequency: $inputFrequency)"
+    else
+      # TODO: merge files if type=1
+      _log_history "Skipped: $inputPath (will be merged)"
+    fi
+
+    ((processNum++))
+  done <"$pathTargets"
+
+  _log 1 0 "\nFinished Process: ${colorCyan}Copying ${processNum} Target(s)"
+  sleep 1
+  _log 1 1 "Archiving and Compressing Backup"
+
+  cd "$pathBaxups" || { _abort; }
+  tar -czf "${dateCur}.tar.gz" "$dateCur"
+
+  _log_history "Archived and Compressed: $pathCur"
+
+  if [[ $boolKeep == 0 ]]; then
+    _log 1 1 "Removing Unarchived Folder"
+    sleep 1
+    rm -r "$pathCur"
+  else
+    _log 0 1 "Keeping Unarchived Folder"
+    chown -R "$varUser":"$varUser" "$pathCur"
+  fi
+
+  chown "$varUser":"$varUser" "${pathCur}.tar.gz"
+
+  _log 1 1 "Finished backup process"
+  _log_history "Finished Backup Process\n\n"
+}
+
+#-!SECTION FUNCTIONS
+
+# SECTION MAIN
 _check_args "$@"
 
 if [[ $boolHelp == 1 ]]; then
@@ -139,18 +256,27 @@ elif [[ $boolDebug == 1 ]]; then
   echo "$boolFrequency"
   echo "$varFrequency"
   echo "$boolStartup"
-  echo "$pathDir"
-  echo "$pathHistory"
-  echo "$pathTarget"
+  echo "$pathBaxups"
 elif [[ $boolCreate == 1 && $boolSetup == 1 ]]; then
-  printf '%b%s%b%s%b' "$colorRed" "Warning: " "$colorReset" "Do not use both create and setup commands" "\n"
-  exit
+  _log 1 2 "Do not use both create and setup commands"
+  _abort
 elif [[ $boolRoot == 0 && $EUID -gt 0 ]]; then
-  printf '%b%s%b' "$colorRed" "Please run as ROOT!!!" "\n"
-  sleep 0.1
-  printf '%s%b%b' "Aborting..." "$colorReset" "\n"
-  sleep 1
-  exit
+  _log 1 3 "Please run as Root(sudo)"
+  _abort
 elif [[ ($boolCreate == 1 || $boolSetup == 1) && $boolStartup == 0 ]]; then
   _check_user
+  _check_folder
+  if [[ $boolCreate == 1 ]]; then
+    _create
+    sleep 1
+    _log 1 0 "Script Ended ${colorGreen}Successfully"
+    sleep 1
+    exit
+  elif [[ $boolSetup == 1 ]]; then
+    _log 1 2 "Setup Command Not Implemented Yet"
+    _abort
+  fi
+
 fi
+
+#-!SECTION MAIN
