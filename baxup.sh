@@ -1,4 +1,7 @@
 #!/bin/bash
+# TODO: Make Build Script for one line setup with wget
+# - All Files: (/usr/share/baxup/)
+# - Symbolic Link: (/usr/bin/baxup)
 
 # SECTION VARIABLES
 # More about cli coloring: LINK https://stackoverflow.com/a/28938235
@@ -132,6 +135,7 @@ _check_args() {
         varUser=${tmpVar#*=}
       else
         _log 1 2 "There is no command named $tmpVar or $tmpVar do not have enough argument"
+        # TODO: suggest similar commands (create a new c++ script includes "edit distance")
         _abort
       fi
     done
