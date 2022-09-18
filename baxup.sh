@@ -210,7 +210,7 @@ _create() {
   _log 1 1 "Archiving and Compressing Backup"
 
   cd "$pathBaxups" || { _abort; }
-  tar -czf "${dateCur}.tar.gz" "$dateCur"
+  if [[ $boolVerbose == 1 ]]; then tar -cvzf "${dateCur}.tar.gz" "$dateCur"; else tar -czf "${dateCur}.tar.gz" "$dateCur"; fi
 
   _log_history "Archived and Compressed: $pathCur"
 
