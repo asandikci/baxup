@@ -135,7 +135,7 @@ _check_args() {
         varUser=${tmpVar#*=}
       else
         _log 1 2 "There is no command named $tmpVar or $tmpVar do not have enough argument"
-        # TODO: suggest similar commands (create a new c++ script includes "edit distance")
+        # TODO: suggest similar commands (create a new c++ script includes "edit distance" algorithm)
         _abort
       fi
     done
