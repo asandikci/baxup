@@ -1,7 +1,4 @@
 #!/bin/bash
-# TODO: Make Build Script for one line setup with wget
-# - All Files: (/usr/share/baxup/)
-# - Symbolic Link: (/usr/bin/baxup)
 
 # SECTION VARIABLES
 # More about cli coloring: LINK https://stackoverflow.com/a/28938235
@@ -49,7 +46,6 @@ pathBaxups="/home/${varUser}/baxups/"
 pathHistory="/home/${varUser}/baxups/history.log"
 pathTargets="/home/${varUser}/baxups/targets.txt"
 pathSetup=""
-# TODO: Store (write/read/check) path variables in a config file (~/.config/baxup/variables.txt)
 
 dateCur=$(date '+%Y-%m-%d_%H-%M')
 
@@ -79,11 +75,7 @@ _log() {
     elif [[ $2 == 3 ]]; then
       printf '%b%s%b' "$colorRed" "Error:" "$colorReset $3 $colorReset\n"
     fi
-
   fi
-
-  # TODO: Write to local logs (.local or .cache)
-
 }
 
 # log to history.log
@@ -135,7 +127,6 @@ _check_args() {
         varUser=${tmpVar#*=}
       else
         _log 1 2 "There is no command named $tmpVar or $tmpVar do not have enough argument"
-        # TODO: suggest similar commands (create a new c++ script includes "edit distance" algorithm)
         _abort
       fi
     done
@@ -204,13 +195,10 @@ _create() {
     fi
     sleep 0.2
     if [[ $inputType == "0" ]]; then
-      # TODO: make folder names from root (for easy setup)
-      # cp -r "$inputPath" "$pathCur"
-      # TODO: check if file exist
+      cp -r "$inputPath" "$pathCur"
       _log 1 1 "Copied $inputPath"
       _log_history " - $inputPath (Frequency: $inputFrequency)"
     else
-      # TODO: merge files if type=1
       _log_history "Skipped: $inputPath (will be merged)"
     fi
 
