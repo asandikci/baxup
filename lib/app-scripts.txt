@@ -1,0 +1,5 @@
+# For detecting scripts of apps automatically
+# examples:
+
+# gnome-tweaks `sudo apt install gnome-tweaks`
+# com.github.hluk.copyq `flatpak install com.github.hluk.copyq`

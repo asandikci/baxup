@@ -1,0 +1,2 @@
+# There will be user selected apps to install in -setup
+# Will be copied into archived backup every time
