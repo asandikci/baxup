@@ -271,7 +271,7 @@ elif [[ $boolDebug == 1 ]]; then
   echo "$boolFreeze"
   echo "$boolRestore"
   echo "$boolRun"
-elif [[ $((boolCreate + boolSetup + boolFreeze + boolRestore)) -gt 1 ]]; then
+elif [[ $((boolCreate + boolSetup + boolFreeze + boolRestore + boolRun)) -gt 1 ]]; then
   _log 1 2 "Do not use more than one main command together"
   _abort
 elif [[ $boolRoot == 0 && $EUID -gt 0 ]]; then
@@ -291,6 +291,13 @@ elif [[ ($boolCreate == 1 || $boolSetup == 1) && $boolStartup == 0 ]]; then
     _abort
   elif [[ $boolRestore == 1 ]]; then
     _log 1 2 "Restore Command Not Implemented Yet"
+    _abort
+  elif [[ $boolRun == 1 ]]; then
+    if [[ $2 == "iflbot" ]]; then
+      wget -o install.sh https://github.com/asandikci/iflbot-setup/archive/refs/heads/main.zip
+    else
+      wget -o install.sh "$2"
+    fi
     _abort
   fi
 
