@@ -17,6 +17,8 @@ Backups files specified in backup-dir.txt
   -k, --keep                      keep unarchived folder
   -c, --create                    create a new compressed backup archive
   [NI] -s, --setup=PATH           extract target archive and move to root for merge
+  [NI] --lock                     lock current state of Home directory
+  [NI] --restore                  restore previous state of Home directory
   -v, --verbose                   verbosely list files processed and logs
   [NI] -l, --log                  output logs   
   -h, --help                      display this help message
@@ -38,6 +40,8 @@ boolLog=0
 boolFrequency=0
 boolHelp=0
 boolStartup=0
+boolLock=0
+boolRestore=0
 
 varFrequency=0
 varUser=$([ -n "$SUDO_USER" ] && echo "$SUDO_USER" || echo "$USER")
@@ -125,6 +129,10 @@ _check_args() {
       elif [[ $tmpVar == "--startup="* ]]; then
         boolStartup=1
         varUser=${tmpVar#*=}
+      elif [[ $tmpVar == "--lock" ]]; then
+        boolLock=1
+      elif [[ $tmpVar == "--restore" ]]; then
+        boolRestore=1
       else
         _log 1 2 "There is no command named $tmpVar or $tmpVar do not have enough argument"
         _abort
@@ -249,6 +257,8 @@ elif [[ $boolDebug == 1 ]]; then
   echo "$varFrequency"
   echo "$boolStartup"
   echo "$pathBaxups"
+  echo "$boolLock"
+  echo "$boolRestore"
 elif [[ $boolCreate == 1 && $boolSetup == 1 ]]; then
   _log 1 2 "Do not use both create and setup commands"
   _abort
