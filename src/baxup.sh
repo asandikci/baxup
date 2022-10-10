@@ -293,12 +293,15 @@ elif [[ ($boolCreate == 1 || $boolSetup == 1) && $boolStartup == 0 ]]; then
     _log 1 2 "Restore Command Not Implemented Yet"
     _abort
   elif [[ $boolRun == 1 ]]; then
+    sudo mkdir /baxup/run/ -p
+    cd /baxup/run/ || _abort
     if [[ $2 == "iflbot" ]]; then
-      wget -o install.sh https://github.com/asandikci/iflbot-setup/archive/refs/heads/main.zip
+      wget -O install.sh https://raw.githubusercontent.com/asandikci/iflbot-setup/main/install.sh
     else
-      wget -o install.sh "$2"
+      wget -O install.sh "$2"
     fi
-    _abort
+    sudo bash install.sh
+    _abort 1
   fi
 
 fi
