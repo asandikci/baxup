@@ -17,7 +17,7 @@ Backups files specified in backup-dir.txt
   -k, --keep                      keep unarchived folder
   -c, --create                    create a new compressed backup archive
   [NI] -s, --setup=PATH           extract target archive and move to root for merge
-  [NI] --lock                     lock current state of Home directory
+  [NI] --freeze                   freeze current state of Home directory
   [NI] --restore                  restore previous state of Home directory
   -v, --verbose                   verbosely list files processed and logs
   [NI] -l, --log                  output logs   
@@ -40,7 +40,7 @@ boolLog=0
 boolFrequency=0
 boolHelp=0
 boolStartup=0
-boolLock=0
+boolFreeze=0
 boolRestore=0
 
 varFrequency=0
@@ -89,10 +89,17 @@ _log_history() {
 
 # abort from script
 _abort() {
-  sleep 0.5
-  _log 1 0 "${colorRed}Aborting" "." "." "."
-  sleep 0.5
-  exit
+  if [[ $1 == 1 ]]; then
+    sleep 1
+    _log 1 0 "Script Ended ${colorGreen}Successfully"
+    sleep 1
+    exit
+  else
+    sleep 0.5
+    _log 1 0 "${colorRed}Aborting" "." "." "."
+    sleep 0.5
+    exit
+  fi
 }
 
 # show help message
@@ -129,8 +136,8 @@ _check_args() {
       elif [[ $tmpVar == "--startup="* ]]; then
         boolStartup=1
         varUser=${tmpVar#*=}
-      elif [[ $tmpVar == "--lock" ]]; then
-        boolLock=1
+      elif [[ $tmpVar == "--freeze" ]]; then
+        boolFreeze=1
       elif [[ $tmpVar == "--restore" ]]; then
         boolRestore=1
       else
@@ -257,10 +264,10 @@ elif [[ $boolDebug == 1 ]]; then
   echo "$varFrequency"
   echo "$boolStartup"
   echo "$pathBaxups"
-  echo "$boolLock"
+  echo "$boolFreeze"
   echo "$boolRestore"
-elif [[ $boolCreate == 1 && $boolSetup == 1 ]]; then
-  _log 1 2 "Do not use both create and setup commands"
+elif [[ $((boolCreate + boolSetup + boolFreeze + boolRestore)) -gt 1 ]]; then
+  _log 1 2 "Do not use more than one main command together"
   _abort
 elif [[ $boolRoot == 0 && $EUID -gt 0 ]]; then
   _log 1 3 "Please run as Root(sudo)"
@@ -270,12 +277,15 @@ elif [[ ($boolCreate == 1 || $boolSetup == 1) && $boolStartup == 0 ]]; then
   _check_folder
   if [[ $boolCreate == 1 ]]; then
     _create
-    sleep 1
-    _log 1 0 "Script Ended ${colorGreen}Successfully"
-    sleep 1
-    exit
+    _abort 1
   elif [[ $boolSetup == 1 ]]; then
     _log 1 2 "Setup Command Not Implemented Yet"
+    _abort
+  elif [[ $boolFreeze == 1 ]]; then
+    _log 1 2 "Freeze Command Not Implemented Yet"
+    _abort
+  elif [[ $boolRestore == 1 ]]; then
+    _log 1 2 "Restore Command Not Implemented Yet"
     _abort
   fi
 
