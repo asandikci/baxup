@@ -19,6 +19,7 @@ Backups files specified in backup-dir.txt
   [NI] -s, --setup=PATH           extract target archive and move to root for merge
   [NI] --freeze                   freeze current state of Home directory
   [NI] --restore                  restore previous state of Home directory
+  [NI] --run                      download and run external script
   -v, --verbose                   verbosely list files processed and logs
   [NI] -l, --log                  output logs   
   -h, --help                      display this help message
@@ -42,6 +43,7 @@ boolHelp=0
 boolStartup=0
 boolFreeze=0
 boolRestore=0
+boolRun=0
 
 varFrequency=0
 varUser=$([ -n "$SUDO_USER" ] && echo "$SUDO_USER" || echo "$USER")
@@ -140,6 +142,8 @@ _check_args() {
         boolFreeze=1
       elif [[ $tmpVar == "--restore" ]]; then
         boolRestore=1
+      elif [[ $tmpVar == "--run" ]]; then
+        boolRun=1
       else
         _log 1 2 "There is no command named $tmpVar or $tmpVar do not have enough argument"
         _abort
@@ -266,6 +270,7 @@ elif [[ $boolDebug == 1 ]]; then
   echo "$pathBaxups"
   echo "$boolFreeze"
   echo "$boolRestore"
+  echo "$boolRun"
 elif [[ $((boolCreate + boolSetup + boolFreeze + boolRestore)) -gt 1 ]]; then
   _log 1 2 "Do not use more than one main command together"
   _abort
