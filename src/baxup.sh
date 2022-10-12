@@ -301,7 +301,7 @@ elif [[ ($boolCreate == 1 || $boolSetup == 1) && $boolStartup == 0 ]]; then
       wget -O install.sh "$2"
     fi
     sudo bash install.sh
-    _abort 1
+    _abort 2
   fi
 
 fi
