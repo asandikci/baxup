@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 
-signed main() {
+static std::string suggest_similar() {
   // edit distance
   // returns the nearest argument
 
@@ -12,4 +12,5 @@ signed main() {
       "history", "variable", "config", "target",  "version",
       "add",     "app",      "freeze", "restore"};
   std::vector<int> difference(defaults.size(), 0);
+  return arg;
 }
